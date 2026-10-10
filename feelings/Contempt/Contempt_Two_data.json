@@ -1,0 +1,20 @@
+[
+  {
+  "name": "看不起",
+  "emotion": "Contempt",
+  "require_all_groups": [
+    ["也配", "算什么", "就这", "不过如此"],
+    ["他", "她", "你", "这"]
+  ],
+  "weight": 1.4
+},
+{
+  "name": "不屑",
+  "emotion": "Contempt",
+  "require_all_groups": [
+    ["不屑", "懒得", "才不", "谁稀罕"],
+    ["理", "管", "看", "说"]
+  ],
+  "weight": 1.2
+}
+]

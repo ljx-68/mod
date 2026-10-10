@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# PyCharm
+.idea/
+
+# 数据
+data/
+*.jsonl
+*.csv
+ratings.csv
+
+# 其他
+.DS_Store
+78/
+mod/
