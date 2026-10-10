@@ -46,12 +46,14 @@ def load_negation_lexicon(root: Path | str = ".") -> NegationLexicon:
 def load_modifier_lexicon(root: Path | str = ".") -> ModifierLexicon:
     base = Path(root) / "Subtle_emotional_shifts"
     shifts = _load_json(base / "Subtle_emotional_shifts_data.json")
-
+    value: float
     modifiers: dict[str, float] = {}
     for item in shifts:
-        data = item.get("data", {})
-        if isinstance(data, dict):
-            modifiers.update(data)
+        if not isinstance(item, dict):
+            continue
+        value = item.get("value", 1.0)
+        for word in item.get("words", []):
+            modifiers[word] = value
     return ModifierLexicon(modifiers = modifiers)
 
 
@@ -136,22 +138,27 @@ def load_relation_rules(root: Path | str = ".") -> tuple[RelationRule, ...]:
     return tuple(sorted(rules, key = lambda r: r.priority))
 
 class JSONLStorage:
-    def __init__(self, path: str, key: str = "sentence"):
+    def __init__(self, path: str, key: str = "sentence", mod: str = "a"):
         self.path = Path(path)
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.key = key                # 去重字段
+        self.path.parent.mkdir(parents = True, exist_ok = True)
+        self.key = key
+        self.mode = mod
         self._seen: set[str] = set()
+        self.initialized = False
 
     def _load_seen(self):
         if self._seen:
             return
+        if self.mode == "w" and not self.initialized:
+            self.path.write_text("", encoding = "ytf-8")
+            self.initialized = True
+            return
         if self.path.exists():
-            with self.path.open("r", encoding="utf-8") as f:
-                for line in f:
-                    line = line.strip()
+            with self.path.open("r", encoding = "utf-8")as f:
+                for i in f:
+                    line = i.strip()
                     if line:
                         self._seen.add(json.loads(line)[self.key])
-
     def exists(self, value: str) -> bool:
         self._load_seen()
         return value in self._seen

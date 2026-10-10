@@ -8,19 +8,18 @@ class Dataloop:
     def load_texts(self)->list[str]:
         address: str = "data/ratings.txt"
         with open(address, "r", encoding = "utf-8")as f:
-            return [line.strip() for line in f if line.strip()]
+            liens = f.readlines()
+        return [line.strip() for line in liens[:10] if line.strip()]
     def annotate(self):
         data = self.intent.Data_Storage(self.df)
         print(data)
-    def sample_jsonl(self, path: str, n: int = 10) -> list[dict]:
+    def sample_jsonl(self, path: str, n: int = 10) -> list[str]:
         with open(path, "r", encoding="utf-8") as f:
-            lines = [line.strip() for line in f if line.strip()]
-        sample = random.sample(lines, min(n, len(lines)))
-        return [json.loads(line) for line in sample]
+            lines = f.readlines()
+        return [line.strip() for line in lines[:n] if line.strip()]
 
 
 if __name__ == "__main__":
     op = Dataloop()
     t = op.sample_jsonl("data/clause/v1.0.jsonl")
-    for s in t:
-        print(s["clause"], s["emotions"])
+    print(t)

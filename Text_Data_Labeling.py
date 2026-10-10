@@ -31,12 +31,10 @@ class EmotionTypeLabeling:
     def _build_word_index(self) -> tuple[list[ContextPattern], dict[str, list[str]]]:
         patterns: list[ContextPattern] = []
         word_index: dict[str, list[str]] = {}
-
         for emo in self.emotions:
             for entry in load_emotion_data(emo, root=self.root):
                 for word in entry["data"]:
                     word_index.setdefault(word, []).append(entry["Type"])
-
             patterns.extend(
                 Secondary_judgment_data_loading(emo, root=self.root)
             )
@@ -132,18 +130,22 @@ class EmotionTypeLabeling:
                     return rule.name
 
         return ""
-    def _count_negation(self, tokens: list[Token], position: int) -> int:
+    def _count_negation(self, tokens: list[Token], position: int, max_distance: int = 5) -> int:
         return sum(
             1 for t in tokens
-            if t.kind == "negation" and t.start < position
+            if t.kind == "negation" and  0 <= position - t.end < max_distance
         )
-
-    def _compute_intensity(self, tokens: list[Token], position: int) -> float:
-        intensity = 1.0
+    def _compute_intensity(self, tokens: list[Token], position: int, max_distance: float = 3.0) -> float:
+        best_value = 1.0
+        best_distance = max_distance + 1
         for t in tokens:
-            if t.kind == "modifier" and t.start < position:
-                intensity *= t.value
-        return round(intensity, 2)
+            if t.kind != "modifier":
+                continue
+            distance = position - t.end
+            if 0 <= distance < max_distance and distance < best_distance:
+                best_distance = distance
+                best_value = t.value
+        return min(best_value, 3.0)
 
     def _fill_score(
         self,
@@ -161,7 +163,7 @@ class EmotionTypeLabeling:
             s = scores[emo]
             s.raw += 1.0
             s.neg_count += neg_count
-            s.intensity *= intensity
+            s.intensity = max(s.intensity, intensity)
             s.positions.append(token.start)
             s.sources.append(f"词表:{token.word}")
             if relation:

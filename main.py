@@ -20,19 +20,25 @@ class EmotionTypeLabeling_S:
             "Shame": (0.15, 0.58, 0.15),
         }
         self.NEGATE_MAP = {
-            "Joy": ("Sad", 1.0),
-            "Sad": ("Joy", 1.0),
-            "Fear": ("Joy", 0.3),
-            "Anger": ("Joy", 0.3),
-            "Disgust": ("Joy", 0.3),
-            "Love": ("Sad", 0.3),
-            "Anticipation": ("Sad", 0.3),
-            "Surprise": (None, 0.0),
-            "Calm": (None, 0.0),
-            "Trust": ("Disgust", 0.5),
-            "Contempt": ("Trust", 0.3),
-            "Anxiety": ("Calm", 0.3),
-            "Shame": ("Joy", 0.2),
+            "Joy":          ("Sad", 1.0),
+            "Sad":          ("Joy", 1.0),
+            "Fear":         ("Calm", 0.5),
+            "Calm":         ("Fear", 0.3),
+
+            "Anger":        ("Trust", 0.5),
+            "Trust":        ("Anger", 0.5),
+
+            "Love":         ("Disgust", 0.5),
+            "Disgust":      ("Love", 0.5),
+
+            "Anticipation": ("Calm", 0.4),
+            "Surprise":     ("Calm", 0.3),
+
+            "Contempt":     ("Trust", 0.3),
+
+            "Anxiety":      ("Calm", 0.5),
+        
+            "Shame":        ("Joy", 0.2),
         }
 
 class Intent:
