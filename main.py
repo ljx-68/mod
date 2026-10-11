@@ -77,22 +77,24 @@ class Intent:
             V += coords[0] * w
             A += coords[1] * w
             D += coords[2] * w
-        total_final = sum(abs(i.final) for i in scores.values() if i.final != 0)
+        total_final = sum(abs(i) for i in active.values())
         intensity = min(1.0, total_final)
         V = 0.5 + (V - 0.5) * intensity
         A = 0.5 + (A - 0.5) * intensity
         D = 0.5 + (D - 0.5) * intensity
         return [round(max(0, min(1, x)), 2) for x in [V, A, D]]
     def item(self, scores: dict[str, EmotionScore]) -> dict[str, float]:
-        if not scores: return {}
-        active: dict = {}
+        if not scores:
+            return {}
+        active: dict[str, float] = {}
         for e, s in scores.items():
             if s.final > 0:
-                active[e] = s.raw
+                active[e] = max(active.get(e, 0), abs(s.final))
             elif s.final < 0:
                 t, c = self.data_list.NEGATE_MAP.get(e, (None, 0))
                 if t:
-                    active[t] = active.get(t, 0) + s.raw * c
+                    active[t] = max(active.get(t, 0), abs(s.final) * c)
+
         return active
 
     def Overall_output(self, test: str, data: list)-> tuple[str, list[float]]:

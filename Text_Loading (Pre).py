@@ -11,6 +11,7 @@ class Dataloop:
             liens = f.readlines()
         return [line.strip() for line in liens[:10] if line.strip()]
     def annotate(self):
+        print(self.df)
         data = self.intent.Data_Storage(self.df)
         print(data)
     def sample_jsonl(self, path: str, n: int = 10) -> list[str]:
@@ -21,5 +22,5 @@ class Dataloop:
 
 if __name__ == "__main__":
     op = Dataloop()
-    t = op.sample_jsonl("data/clause/v1.0.jsonl")
+    t = op.annotate()
     print(t)

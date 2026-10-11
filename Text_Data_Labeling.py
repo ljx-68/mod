@@ -34,12 +34,16 @@ class EmotionTypeLabeling:
         for emo in self.emotions:
             for entry in load_emotion_data(emo, root=self.root):
                 for word in entry["data"]:
-                    word_index.setdefault(word, []).append(entry["Type"])
+                    existing = word_index.setdefault(word, [])
+                    if emo not in existing:
+                        if existing:
+                            print(f"⚠️ 重复: {word} 已在 {existing}，又出现在 {emo}")
+                        existing.append(emo)
             patterns.extend(
                 Secondary_judgment_data_loading(emo, root=self.root)
             )
 
-        return patterns, word_index
+        return (patterns, word_index)
 
     def _build_lexicon(self) -> dict[str, list[tuple[str, object]]]:
         lex: dict[str, list[tuple[str, object]]] = {}
