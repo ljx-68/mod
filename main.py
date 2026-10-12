@@ -20,25 +20,20 @@ class EmotionTypeLabeling_S:
             "Shame": (0.15, 0.58, 0.15),
         }
         self.NEGATE_MAP = {
-            "Joy":          ("Sad", 1.0),
-            "Sad":          ("Joy", 1.0),
-            "Fear":         ("Calm", 0.5),
-            "Calm":         ("Fear", 0.3),
-
-            "Anger":        ("Trust", 0.5),
-            "Trust":        ("Anger", 0.5),
-
-            "Love":         ("Disgust", 0.5),
-            "Disgust":      ("Love", 0.5),
-
+            "Joy": ("Sad", 1.0),
+            "Sad": ("Joy", 1.0),
+            "Fear": ("Calm", 0.5),
+            "Calm": ("Fear", 0.3),
+            "Anger": ("Trust", 0.5),
+            "Trust": ("Anger", 0.5),
+            "Love": ("Disgust", 0.5),
+            "Disgust": ("Love", 0.5),
             "Anticipation": ("Calm", 0.4),
-            "Surprise":     ("Calm", 0.3),
-
-            "Contempt":     ("Trust", 0.3),
-
-            "Anxiety":      ("Calm", 0.5),
-        
-            "Shame":        ("Joy", 0.2),
+            "Surprise": ("Calm", 0.3),
+            "Contempt": ("Trust", 0.3),
+            "Anxiety": ("Calm", 0.5),
+            "Shame": ("Joy", 0.2),
+            "Ashamed": ("Joy", 0.2),
         }
 
 class Intent:
@@ -123,5 +118,21 @@ class Intent:
 
 
 if __name__ == "__main__":
-    op = Intent()
-    op.Data_Storage(["我仿佛是一只快乐的小鸟，在幸福的天空中，自由地翱翔！",])
+    main = Intent()
+
+    print(main.Sentence_splitting("我不开心"))
+    # 期望：Sad
+
+    print(main.Sentence_splitting("我不害怕"))
+    # 期望：Calm
+
+    print(main.Sentence_splitting("我不生气"))
+    # 期望：Trust
+
+    print(main.Sentence_splitting("我不爱他"))
+    # 期望：Disgust
+
+    print(main.Sentence_splitting("我不担心"))
+    # 期望：Calm
+
+    print(main.Sentence_splitting("我不是不开心"))

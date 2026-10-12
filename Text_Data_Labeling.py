@@ -21,18 +21,18 @@ class EmotionTypeLabeling:
         )
 
         self.context_patterns, self.word_index = self._build_word_index()
-        self.negation = load_negation_lexicon(root=self.root)
-        self.modifier = load_modifier_lexicon(root=self.root)
-        self.relation_rules = load_relation_rules(root=self.root)
+        self.negation = load_negation_lexicon(root = self.root)
+        self.modifier = load_modifier_lexicon(root = self.root)
+        self.relation_rules = load_relation_rules(root = self.root)
 
         self.lexicon = self._build_lexicon()
-        self.words_sorted = sorted(self.lexicon, key=len, reverse=True)
+        self.words_sorted = sorted(self.lexicon, key = len, reverse = True)
 
     def _build_word_index(self) -> tuple[list[ContextPattern], dict[str, list[str]]]:
         patterns: list[ContextPattern] = []
         word_index: dict[str, list[str]] = {}
         for emo in self.emotions:
-            for entry in load_emotion_data(emo, root=self.root):
+            for entry in load_emotion_data(emo, root = self.root):
                 for word in entry["data"]:
                     existing = word_index.setdefault(word, [])
                     if emo not in existing:
@@ -95,9 +95,7 @@ class EmotionTypeLabeling:
                 i += len(word)
             else:
                 i += 1
-
         return tokens
-
     def _match_at(self, text: str, position: int, matched: set[int]) -> str | None:
         for word in self.words_sorted:
             if text.startswith(word, position):
@@ -172,3 +170,6 @@ class EmotionTypeLabeling:
             s.sources.append(f"词表:{token.word}")
             if relation:
                 s.relation = relation
+if __name__ == "__main__":
+    main = EmotionTypeLabeling()
+    print(main.emotions)

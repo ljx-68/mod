@@ -1,0 +1,44 @@
+[
+  {
+    "type": "pronoun",
+    "subtype": "first_person",
+    "desc": "第一人称",
+    "words": ["我", "我们", "咱们", "咱"]
+  },
+  {
+    "type": "pronoun",
+    "subtype": "second_person",
+    "desc": "第二人称",
+    "words": ["你", "你们", "您", "您们"]
+  },
+  {
+    "type": "pronoun",
+    "subtype": "third_person",
+    "desc": "第三人称",
+    "words": ["他", "她", "它", "他们", "她们", "它们", "祂"]
+  },
+  {
+    "type": "pronoun",
+    "subtype": "reflexive",
+    "desc": "反身代词",
+    "words": ["自己", "自身", "本人"]
+  },
+  {
+    "type": "pronoun",
+    "subtype": "collective",
+    "desc": "集合代词",
+    "words": ["大家", "别人", "人家", "大伙"]
+  },
+  {
+    "type": "demonstrative",
+    "subtype": "proximal",
+    "desc": "近指",
+    "words": ["这", "这个", "这家", "这件事", "这种", "这里", "这些", "这么"]
+  },
+  {
+    "type": "demonstrative",
+    "subtype": "distal",
+    "desc": "远指",
+    "words": ["那", "那个", "那家", "那件事", "那种", "那里", "那些", "那么"]
+  }
+]
