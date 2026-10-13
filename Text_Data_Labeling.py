@@ -1,10 +1,8 @@
-import re
 from pathlib import Path
 
 from Types import ContextPattern, EmotionScore, Token
 from Document_Management import (
     load_emotion_data,
-    Secondary_judgment_data_loading,
     load_negation_lexicon,
     load_modifier_lexicon,
     load_relation_rules,
@@ -12,13 +10,8 @@ from Document_Management import (
 
 
 class EmotionTypeLabeling:
-    PRONOUNS = ("我", "你", "他", "她", "它", "我们", "你们", "他们", "咱们")
-
     def __init__(self, root: Path | str = "."):
         self.root = Path(root)
-        self.emotions = sorted(
-            p.name for p in (self.root / "feelings").iterdir() if p.is_dir()
-        )
 
         self.context_patterns, self.word_index = self._build_word_index()
         self.negation = load_negation_lexicon(root = self.root)
@@ -28,23 +21,36 @@ class EmotionTypeLabeling:
         self.lexicon = self._build_lexicon()
         self.words_sorted = sorted(self.lexicon, key = len, reverse = True)
 
-    def _build_word_index(self) -> tuple[list[ContextPattern], dict[str, list[str]]]:
+    def _build_word_index(self, address: str = "feelings") -> tuple[list[ContextPattern], dict[str, list[str]]]:
+        data: dict = load_emotion_data(address = address, root = self.root)
+        if not data:
+            return [], {}
         patterns: list[ContextPattern] = []
         word_index: dict[str, list[str]] = {}
-        for emo in self.emotions:
-            for entry in load_emotion_data(emo, root = self.root):
-                for word in entry["data"]:
-                    existing = word_index.setdefault(word, [])
-                    if emo not in existing:
-                        if existing:
-                            print(f"⚠️ 重复: {word} 已在 {existing}，又出现在 {emo}")
-                        existing.append(emo)
-            patterns.extend(
-                Secondary_judgment_data_loading(emo, root=self.root)
-            )
+        for emo, items in data.items():
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                if "data" in item:
+                    emotion = item.get("Type", emo)
+                    for word in item.get("data", []):
+                        self._add_word(word_index, word, emotion)
+                elif "name" in item and "emotion" in item:
+                    self._add_pattern(item, patterns)
+        return patterns, word_index
 
-        return (patterns, word_index)
-
+    def _add_pattern(self, item: dict, patterns: list[ContextPattern]) -> None:
+        try:
+            patterns.append(ContextPattern(
+                name=item["name"],
+                emotion=item["emotion"],
+                require_all_groups=tuple(
+                    tuple(g) for g in item["require_all_groups"]
+                ),
+                weight=float(item["weight"]),
+            ))
+        except (KeyError, TypeError, ValueError):
+            pass
     def _build_lexicon(self) -> dict[str, list[tuple[str, object]]]:
         lex: dict[str, list[tuple[str, object]]] = {}
 
@@ -170,6 +176,14 @@ class EmotionTypeLabeling:
             s.sources.append(f"词表:{token.word}")
             if relation:
                 s.relation = relation
+
+    def _add_word(self, word_index: dict, word: str, emo: str) -> None:
+        existing = word_index.setdefault(word, [])
+        if emo in existing:
+            return
+        if existing:
+            print(f"⚠️ 重复: {word} 已在 {existing}，又出现在 {emo}")
+        existing.append(emo)
 if __name__ == "__main__":
     main = EmotionTypeLabeling()
-    print(main.emotions)
+    print(main._build_word_index())

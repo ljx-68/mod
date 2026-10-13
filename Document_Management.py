@@ -3,22 +3,29 @@ from pathlib import Path
 from Types import (NegationLexicon, ContextMatch, ContextPattern, RelationRule, RelationPair,
                    ModifierLexicon, RelationRule, InferenceRecord, EmotionRecord, ClauseRecord)
 from datetime import datetime
-
+import os
 class DataLoadError(RuntimeError):
     pass
-def load_emotion_data(address: str, root: Path | str = ".") -> list[dict]:
-    path = Path(root) / "feelings" / address / f"{address}_data.json"
-
+def load_emotion_data(address: str = "feelings", root: Path | str = ".") -> dict[str, list[dict]]:
+    path = Path(root) / address
     if not path.exists():
-        return []
-
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            return json.load(f)
-    except json.JSONDecodeError as e:
-        raise DataLoadError(f"Invalid JSON: {path}: {e}") from e
-    except OSError as e:
-        raise DataLoadError(f"Cannot read: {path}: {e}") from e
+        return {}
+    result: dict[str, list[dict]] = {}
+    for i in sorted(path.rglob("*.json")):
+        if not i.is_file():
+            continue
+        try:
+            data = json.loads(i.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"{i}: JSON loading error : {e}")
+            continue
+        Type: str = ""
+        for entry in data:
+            Type = entry.get("Type")
+            if Type:
+                result[Type] = data
+                break
+    return result
 
 
 def _load_json(path: Path):
@@ -240,10 +247,8 @@ def export_clauses(record: InferenceRecord) -> list[dict]:
 def save_both(result, nested_path: str, clause_path: str):
     record = result_to_record(result)
 
-    nested = JSONLStorage(nested_path, key="sentence")
-    clause_storage = JSONLStorage(clause_path, key="clause")
-
-    # 1. 整句去重
+    nested = JSONLStorage(nested_path, key = "sentence")
+    clause_storage = JSONLStorage(clause_path, key = "clause")
     if not nested.save(record.to_dict()):
         return False
 
@@ -251,3 +256,22 @@ def save_both(result, nested_path: str, clause_path: str):
         clause_storage.save(c)
 
     return True
+
+def Grammar(address: str = "Grammar_structure_library", root: Path | str = ".")-> dict[str, list[dict]]:
+    base = Path(root) / address
+    if not base.exists():
+        return {}
+    result: dict[str, list[dict]] = {}
+    for i in sorted(base.iterdir()):
+        if not i.is_file() or i.suffix != ".json":
+            print(f"JSON error")
+            continue
+        try:
+            data = json.loads(i.read_text(encoding = "utf-8"))
+        except json.JSONDecodeError as e:
+            print(f"{i.name}: JSON loading error : {e}")
+            continue
+        result[i.stem] = data
+    return result
+if __name__ == "__main__":
+    print(load_emotion_data())

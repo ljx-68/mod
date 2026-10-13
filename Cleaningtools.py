@@ -30,7 +30,7 @@ def prepare_data(
 
     df = df[df["comment"].str.len() >= 5]
 
-    df_sample = df.sample(n=min(n, len(df)), random_state=42)
+    df_sample = df.sample(n = min(n, len(df)), random_state=42)
 
     with open(output, "w", encoding="utf-8") as f:
         for text in df_sample["comment"]:
