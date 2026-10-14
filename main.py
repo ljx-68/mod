@@ -1,6 +1,7 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from concurrent.futures.thread import ThreadPoolExecutor
 from Text_Data_Labeling import *
+import re
 from Document_Management import JSONLStorage, result_to_record, export_clauses, save_both
 class EmotionTypeLabeling_S:
     def __init__(self):
@@ -41,14 +42,13 @@ class Intent:
         self.labeler = EmotionTypeLabeling()
         self.data_list = EmotionTypeLabeling_S()
     def Sentence_splitting(self, test : str)->tuple[list, tuple]:
-        self.test = test
         clauses = [
             c.strip()
             for c in re.split(r'''[\[，。？！；:;,.?!"'‘”/{}、|\\\]]''', test)
             if c.strip()
         ]
         if not clauses:
-            return ([], (test, [0.5, 0.5, 0.5]))
+            return ([], (0.5, 0.5, 0.5))
         def process(clause):
             scores = self.labeler.Text_matching(clause)
             vad = self.to_vad(scores)

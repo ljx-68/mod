@@ -1,8 +1,41 @@
 
 from typing import Any
 from dataclasses import dataclass, field, asdict
+from typing import Optional
 
 
+@dataclass
+class ClauseNode:
+    text: str
+    start: int
+    end: int
+
+    level: int = 1
+    split_reason: str = ""
+
+
+    punct: str | None = None
+    punct_type: str | None = None
+    adjust: float = 1.0
+
+    subject: str = ""
+    particle: str = ""
+    is_sentence: bool = False
+
+    relation: str | None = None
+
+    parent: "ClauseNode | None" = field(default=None, repr=False, compare=False)
+    children: list["ClauseNode"] = field(default_factory=list)
+
+    confidence: float = 0.0
+
+    emotion: "EmotionRecord | None" = None
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d.pop("parent", None)
+        d.pop("emotion", None)
+        return d
 
 @dataclass(frozen = True)
 class MatchContext:
@@ -76,8 +109,9 @@ class EmotionScore:              # ← 去掉 frozen=True
     intensity: float = 1.0
     neg_count: int = 0
     relation: str = ""
-    positions: list[int] = field(default_factory=list)
-    sources: list[str] = field(default_factory=list)
+    positions: list[int] = field(default_factory = list)
+    sources: list[str] = field(default_factory = list)
+    subjects: list[str] = field(default_factory = list)
 
     @property
     def final(self) -> float:
@@ -177,3 +211,77 @@ class EmotionRecord:
     @classmethod
     def from_dict(cls, data: dict) -> "EmotionRecord":
         return cls(**data)
+
+@dataclass(frozen = True)
+class GrammarRule:
+    type: str
+    subtype: str
+    desc: str = ""
+    adjust: float = 1.0
+    words: tuple[str, ...] = ()
+@dataclass(frozen=True)
+class GrammarLexicon:
+    pronouns: frozenset[str] = frozenset()
+    prepositions: frozenset[str] = frozenset()
+    particles: dict[str, float] = field(default_factory = dict)
+    punctuations: dict[str, float] = field(default_factory = dict)
+
+@dataclass
+class GrammarResult:
+    subject: str = ""
+    preposition: str = ""
+    particle: str = ""
+    punctuation: str = ""
+
+    subject_pos: int = -1
+    preposition_pos: int = -1
+    particle_pos: int = -1
+    punctuation_pos: int = -1
+
+    is_sentence: bool = False
+    confidence: float = 0.0
+@dataclass(frozen = True)
+class Edge_processing:
+    MIN_LENGTH:int = 3
+    SUBJECT_WINDOW:int = 6
+    PREP_WINDOW:int = 6
+    PUNCT_WINDOW:int = 3
+
+@dataclass
+class ClauseNode2:
+    text: str
+    start: int
+    end: int
+
+    level: int = 1
+    split_reason: str = ""
+
+    punct: str | None = None
+    punct_type: str | None = None
+    adjust: float = 1.0
+
+    subject: str = ""
+    particle: str = ""
+    is_sentence: bool = False
+
+    relation: str | None = None
+
+    parent: "ClauseNode | None" = field(default=None, repr=False, compare=False)
+    children: list["ClauseNode"] = field(default_factory=list)
+
+    confidence: float = 0.0
+
+    emotions: list["EmotionScore"] = field(default_factory=list)
+
+    def add_emotion(self, score: "EmotionScore") -> None:
+        self.emotions.append(score)
+
+    def dominant(self) -> "EmotionScore | None":
+        if not self.emotions:
+            return None
+        return max(self.emotions, key=lambda e: abs(e.raw * e.intensity))
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d.pop("parent", None)
+        return d

@@ -1,9 +1,8 @@
 import json
 from pathlib import Path
-from Types import (NegationLexicon, ContextMatch, ContextPattern, RelationRule, RelationPair,
+from Types import (NegationLexicon, ContextPattern, RelationPair, GrammarLexicon,
                    ModifierLexicon, RelationRule, InferenceRecord, EmotionRecord, ClauseRecord)
 from datetime import datetime
-import os
 class DataLoadError(RuntimeError):
     pass
 def load_emotion_data(address: str = "feelings", root: Path | str = ".") -> dict[str, list[dict]]:
@@ -259,19 +258,45 @@ def save_both(result, nested_path: str, clause_path: str):
 
 def Grammar(address: str = "Grammar_structure_library", root: Path | str = ".")-> dict[str, list[dict]]:
     base = Path(root) / address
-    if not base.exists():
+    if not base.is_dir():
         return {}
     result: dict[str, list[dict]] = {}
     for i in sorted(base.iterdir()):
         if not i.is_file() or i.suffix != ".json":
-            print(f"JSON error")
             continue
         try:
             data = json.loads(i.read_text(encoding = "utf-8"))
         except json.JSONDecodeError as e:
             print(f"{i.name}: JSON loading error : {e}")
             continue
+        if not isinstance(data, list):
+            continue
         result[i.stem] = data
     return result
+
+def build_grammar_lexicon(root = ".") -> GrammarLexicon:
+    raw = Grammar("Grammar_structure_library", root = root)
+
+    def word_set(items: list[dict]) -> frozenset[str]:
+        words = set()
+        for item in items:
+            words.update(item.get("words", []))
+        return frozenset(words)
+
+    def adjust_map(items: list[dict]) -> dict[str, float]:
+        result = {}
+        for item in items:
+            adjust = float(item.get("adjust", 1.0))
+            for w in item.get("words", []):
+                result[w] = adjust
+        return result
+
+    return GrammarLexicon(
+        pronouns = word_set(raw.get("Mainword_data", [])),
+        prepositions = word_set(raw.get("Preposition_database", [])),
+        particles = adjust_map(raw.get("Closing_RemarksVocabulary", [])),
+        punctuations = adjust_map(raw.get("EndingPunctuation_Library", [])),
+    )
+
 if __name__ == "__main__":
     print(load_emotion_data())

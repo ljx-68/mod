@@ -167,7 +167,7 @@ class EmotionTypeLabeling:
 
         for emo in token.value:
             if emo not in scores:
-                scores[emo] = EmotionScore(emotion=emo)
+                scores[emo] = EmotionScore(emotion = emo)
             s = scores[emo]
             s.raw += 1.0
             s.neg_count += neg_count
