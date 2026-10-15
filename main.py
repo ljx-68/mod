@@ -2,45 +2,11 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from concurrent.futures.thread import ThreadPoolExecutor
 from Text_Data_Labeling import *
 import re
+from Roughlyfilter_data import *
 from Document_Management import JSONLStorage, result_to_record, export_clauses, save_both
-class EmotionTypeLabeling_S:
-    def __init__(self):
-        self.base_coords = {
-            "Joy": (0.85, 0.72, 0.68),
-            "Sad": (0.12, 0.35, 0.18),
-            "Fear": (0.12, 0.85, 0.20),
-            "Anger": (0.12, 0.78, 0.68),
-            "Surprise": (0.50, 0.85, 0.25),
-            "Anticipation": (0.68, 0.62, 0.55),
-            "Love": (0.90, 0.55, 0.60),
-            "Disgust": (0.18, 0.52, 0.58),
-            "Calm": (0.50, 0.12, 0.58),
-            "Trust": (0.78, 0.35, 0.58),
-            "Contempt": (0.15, 0.45, 0.72),
-            "Anxiety": (0.20, 0.72, 0.25),
-            "Shame": (0.15, 0.58, 0.15),
-        }
-        self.NEGATE_MAP = {
-            "Joy": ("Sad", 1.0),
-            "Sad": ("Joy", 1.0),
-            "Fear": ("Calm", 0.5),
-            "Calm": ("Fear", 0.3),
-            "Anger": ("Trust", 0.5),
-            "Trust": ("Anger", 0.5),
-            "Love": ("Disgust", 0.5),
-            "Disgust": ("Love", 0.5),
-            "Anticipation": ("Calm", 0.4),
-            "Surprise": ("Calm", 0.3),
-            "Contempt": ("Trust", 0.3),
-            "Anxiety": ("Calm", 0.5),
-            "Shame": ("Joy", 0.2),
-            "Ashamed": ("Joy", 0.2),
-        }
-
 class Intent:
     def __init__(self):
         self.labeler = EmotionTypeLabeling()
-        self.data_list = EmotionTypeLabeling_S()
     def Sentence_splitting(self, test : str)->tuple[list, tuple]:
         clauses = [
             c.strip()
@@ -66,7 +32,7 @@ class Intent:
         weights = {e: v / total_raw for e, v in active.items()}
         V = A = D = 0.0
         for e, w in weights.items():
-            coords = self.data_list.base_coords.get(e)
+            coords = BASE_COORDS.get(e)
             if coords is None:
                 continue
             V += coords[0] * w
@@ -86,7 +52,7 @@ class Intent:
             if s.final > 0:
                 active[e] = max(active.get(e, 0), abs(s.final))
             elif s.final < 0:
-                t, c = self.data_list.NEGATE_MAP.get(e, (None, 0))
+                t, c = NEGATE_MAP.get(e, (None, 0))
                 if t:
                     active[t] = max(active.get(t, 0), abs(s.final) * c)
 
@@ -118,21 +84,3 @@ class Intent:
 
 
 if __name__ == "__main__":
-    main = Intent()
-
-    print(main.Sentence_splitting("我不开心"))
-    # 期望：Sad
-
-    print(main.Sentence_splitting("我不害怕"))
-    # 期望：Calm
-
-    print(main.Sentence_splitting("我不生气"))
-    # 期望：Trust
-
-    print(main.Sentence_splitting("我不爱他"))
-    # 期望：Disgust
-
-    print(main.Sentence_splitting("我不担心"))
-    # 期望：Calm
-
-    print(main.Sentence_splitting("我不是不开心"))

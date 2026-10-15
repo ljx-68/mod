@@ -185,5 +185,4 @@ class EmotionTypeLabeling:
             print(f"⚠️ 重复: {word} 已在 {existing}，又出现在 {emo}")
         existing.append(emo)
 if __name__ == "__main__":
-    main = EmotionTypeLabeling()
-    print(main._build_word_index())
+

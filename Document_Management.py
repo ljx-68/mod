@@ -1,29 +1,62 @@
 import json
 from pathlib import Path
-from Types import (NegationLexicon, ContextPattern, RelationPair, GrammarLexicon,
-                   ModifierLexicon, RelationRule, InferenceRecord, EmotionRecord, ClauseRecord)
+from Types import (
+    GrammarLexicon, InferenceRecord, ClauseRecord,EmotionScore,
+    NegationLexicon, ModifierLexicon,
+    ContextPattern, RelationPair, RelationRule,
+)
+# 文件顶部加
+SUBTYPE_TO_TYPE = {
+    "exclamation": "strong",
+    "question":    "strong",
+    "period":      "strong",
+    "dash":        "medium",
+    "semicolon":   "medium",
+    "colon":       "medium",
+    "comma":       "weak",
+    "enumeration": "weak",
+    "tilde":       "weak",
+    "ellipsis":    "weak",
+    "quotation":   "protect",
+    "bracket":     "protect",
+}
 from datetime import datetime
 class DataLoadError(RuntimeError):
     pass
-def load_emotion_data(address: str = "feelings", root: Path | str = ".") -> dict[str, list[dict]]:
+def load_emotion_data(address="feelings", root=".") -> dict[str, list[dict]]:
     path = Path(root) / address
     if not path.exists():
         return {}
+
     result: dict[str, list[dict]] = {}
-    for i in sorted(path.rglob("*.json")):
-        if not i.is_file():
+
+    for f in sorted(path.rglob("*.json")):
+        if not f.is_file():
             continue
         try:
-            data = json.loads(i.read_text(encoding="utf-8"))
+            data = json.loads(f.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
-            print(f"{i}: JSON loading error : {e}")
+            print(f"{f}: JSON loading error : {e}")
             continue
-        Type: str = ""
-        for entry in data:
-            Type = entry.get("Type")
-            if Type:
-                result[Type] = data
+        if not isinstance(data, list):
+            continue
+        first = data[0] if data and isinstance(data[0], dict) else {}
+        kind_field = None
+        for k in ("type", "Type", "emotion", "category"):
+            if k in first:
+                kind_field = k
                 break
+
+        if kind_field:
+            for entry in data:
+                if not isinstance(entry, dict):
+                    continue
+                kind = entry.get(kind_field)
+                if kind:
+                    result.setdefault(kind, []).append(entry)
+        else:
+            result[f.stem] = data
+
     return result
 
 
@@ -155,23 +188,33 @@ class JSONLStorage:
     def _load_seen(self):
         if self._seen:
             return
-        if self.mode == "w" and not self.initialized:
-            self.path.write_text("", encoding = "ytf-8")
+        if self.mode == "w":
+            self.path.write_text("", encoding="utf-8")
             self.initialized = True
             return
-        if self.path.exists():
-            with self.path.open("r", encoding = "utf-8")as f:
-                for i in f:
-                    line = i.strip()
-                    if line:
-                        self._seen.add(json.loads(line)[self.key])
+        if not self.path.exists():
+            return
+        with self.path.open("r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    obj = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if self.key in obj:
+                    self._seen.add(obj[self.key])
     def exists(self, value: str) -> bool:
         self._load_seen()
         return value in self._seen
 
     def save(self, data: dict) -> bool:
+        if self.key not in data:
+            return False
         value = data[self.key]
-        if self.exists(value):
+        self._load_seen()
+        if value in self._seen:
             return False
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(data, ensure_ascii=False) + "\n")
@@ -185,14 +228,15 @@ def result_to_record(result: tuple) -> InferenceRecord:
     for clause_text, scores, vad in clauses_data:
         emotions = {}
         for emo, s in scores.items():
-            emotions[emo] = EmotionRecord(
+            emotions[emo] = EmotionScore(          # ← 改这里
+                emotion = emo,                       # ← 补 emotion 字段
                 raw = s.raw,
                 intensity = s.intensity,
                 neg_count = s.neg_count,
                 relation = s.relation,
-                final = s.final,
                 positions = list(s.positions),
                 sources = list(s.sources),
+                subjects = list(getattr(s, "subjects", [])),
             )
 
         relation = ""
@@ -256,7 +300,7 @@ def save_both(result, nested_path: str, clause_path: str):
 
     return True
 
-def Grammar(address: str = "Grammar_structure_library", root: Path | str = ".")-> dict[str, list[dict]]:
+def load_grammar_library(address = "Grammar_structure_library", root="."):
     base = Path(root) / address
     if not base.is_dir():
         return {}
@@ -274,29 +318,60 @@ def Grammar(address: str = "Grammar_structure_library", root: Path | str = ".")-
         result[i.stem] = data
     return result
 
-def build_grammar_lexicon(root = ".") -> GrammarLexicon:
-    raw = Grammar("Grammar_structure_library", root = root)
+def build_grammar_lexicon(root=".") -> GrammarLexicon:
+    raw = load_grammar_library("Grammar_structure_library", root = root)
 
-    def word_set(items: list[dict]) -> frozenset[str]:
-        words = set()
+    def word_set(items):
+        s = set()
         for item in items:
-            words.update(item.get("words", []))
-        return frozenset(words)
+            s.update(item.get("words", []))
+        return frozenset(s)
 
-    def adjust_map(items: list[dict]) -> dict[str, float]:
-        result = {}
+    def adjust_map(items):
+        d = {}
         for item in items:
-            adjust = float(item.get("adjust", 1.0))
+            adj = float(item.get("adjust", 1.0))
             for w in item.get("words", []):
-                result[w] = adjust
-        return result
+                d[w] = adj
+        return d
+
+    def subtype_map(items):
+        d = {}
+        for item in items:
+            st = item.get("subtype", "")
+            for w in item.get("words", []):
+                d[w] = st
+        return d
+
+    punct_records   = raw.get("EndingPunctuation_Library", [])
+    closing_records = raw.get("Closing_RemarksVocabulary", [])
+
+    p_subtype = subtype_map(punct_records)
+    p_type  = {w: SUBTYPE_TO_TYPE.get(st, "weak") for w, st in p_subtype.items()}
 
     return GrammarLexicon(
-        pronouns = word_set(raw.get("Mainword_data", [])),
-        prepositions = word_set(raw.get("Preposition_database", [])),
-        particles = adjust_map(raw.get("Closing_RemarksVocabulary", [])),
-        punctuations = adjust_map(raw.get("EndingPunctuation_Library", [])),
+        pronouns         = word_set(raw.get("Mainword_data", [])),
+        prepositions     = word_set(raw.get("Preposition_database", [])),
+        particles        = adjust_map(closing_records),
+        punctuations     = adjust_map(punct_records),
+        punct_type       = p_type,
+        punct_subtype    = p_subtype,
+        particle_subtype = subtype_map(closing_records),
     )
-
 if __name__ == "__main__":
-    print(load_emotion_data())
+    lex = build_grammar_lexicon(".")
+    print("pronouns:", len(lex.pronouns))
+    print("prepositions:", len(lex.prepositions))
+    print("particles:", len(lex.particles))
+    print("punctuations:", len(lex.punctuations))
+    print("punct_type:", lex.punct_type)
+    print("punct_subtype:", lex.punct_subtype)
+
+    # 2. 测标点类型
+    assert lex.punct_type.get("！") == "strong"
+    assert lex.punct_type.get("，") == "weak"
+    assert lex.punct_type.get("“") == "protect"
+
+    # 3. 测情绪数据
+    emo = load_emotion_data()
+    print("emotion keys:", list(emo.keys())[:10])
