@@ -1,4 +1,5 @@
 import json
+from Types import *
 from pathlib import Path
 from Types import (
     GrammarLexicon, InferenceRecord, ClauseRecord,EmotionScore,
@@ -343,11 +344,29 @@ def build_grammar_lexicon(root=".") -> GrammarLexicon:
                 d[w] = st
         return d
 
+    def by_type(records, type_name):
+        return [r for r in records if r.get("type") == type_name]
+
+    def by_type_subtype(records, type_name, subtype_name):
+        return [r for r in records
+                if r.get("type") == type_name
+                and r.get("subtype") == subtype_name]
     punct_records   = raw.get("EndingPunctuation_Library", [])
     closing_records = raw.get("Closing_RemarksVocabulary", [])
 
     p_subtype = subtype_map(punct_records)
-    p_type  = {w: SUBTYPE_TO_TYPE.get(st, "weak") for w, st in p_subtype.items()}
+    p_type    = {w: SUBTYPE_TO_TYPE.get(st, "weak") for w, st in p_subtype.items()}
+
+    spo_records = raw.get("Subject_Predicate_Object", [])
+
+    predicates = word_set(by_type(spo_records, "predicate"))
+    transitive = word_set(by_type_subtype(spo_records, "predicate", "transitive"))
+
+    objects = word_set(by_type(spo_records, "object"))
+    adverbs = word_set(by_type(spo_records, "adverb"))
+
+    continuations = word_set(by_type(spo_records, "continuation"))
+    forbidden = word_set(by_type(spo_records, "forbidden"))
 
     return GrammarLexicon(
         pronouns         = word_set(raw.get("Mainword_data", [])),
@@ -357,21 +376,12 @@ def build_grammar_lexicon(root=".") -> GrammarLexicon:
         punct_type       = p_type,
         punct_subtype    = p_subtype,
         particle_subtype = subtype_map(closing_records),
+        predicates       = predicates,
+        objects          = objects,
+        transitive       = transitive,
+        adverbs          = adverbs,
+        continuations    = continuations,
+        forbidden        = forbidden,
     )
 if __name__ == "__main__":
-    lex = build_grammar_lexicon(".")
-    print("pronouns:", len(lex.pronouns))
-    print("prepositions:", len(lex.prepositions))
-    print("particles:", len(lex.particles))
-    print("punctuations:", len(lex.punctuations))
-    print("punct_type:", lex.punct_type)
-    print("punct_subtype:", lex.punct_subtype)
-
-    # 2. 测标点类型
-    assert lex.punct_type.get("！") == "strong"
-    assert lex.punct_type.get("，") == "weak"
-    assert lex.punct_type.get("“") == "protect"
-
-    # 3. 测情绪数据
-    emo = load_emotion_data()
-    print("emotion keys:", list(emo.keys())[:10])
+    build_grammar_lexicon(".")

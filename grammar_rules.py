@@ -1,10 +1,20 @@
-from Document_Management import build_grammar_lexicon
-from Types import *
+from platform import node
 from Roughlyfilter_data import *
+from Types import ClauseNode, Edge_processing
+from Document_Management import load_relation_rules, build_grammar_lexicon
 class EmotionTypeLabeling:
     def __init__(self, root="."):
         self.grammar = build_grammar_lexicon(root=root)
         self.edge = Edge_processing()
+        self._rel_fronts, self._rel_backs = self.Cache_relational_words()
+    def Cache_relational_words(self):
+        _rel_fronts ,_rel_backs = set(), set()
+        for rule in load_relation_rules("."):
+            for pair in rule.pairs:
+                _rel_fronts.update(pair.front)
+                _rel_backs.update(pair.back)
+            _rel_fronts.update(rule.standalone)
+        return _rel_fronts, _rel_backs
     def split_l1(self, test: str) -> list[ClauseNode]:
         if not test or not test.strip():
             return []
@@ -48,7 +58,7 @@ class EmotionTypeLabeling:
             ))
         return nodes
 
-    def _protect(self, text: str) -> set[int]:
+    def _protect(self, text: str, sun1: int = 7, sun2: int = 8) -> set[int]:
         protected: set[int] = set()
         i = 0
         while i < len(text):
@@ -58,7 +68,7 @@ class EmotionTypeLabeling:
                     j = text.find(r, i + 1)
                     if j != -1:
                         protected.update(range(i, j + 1))
-                        i = j + 1  # ← 必须是 +1
+                        i = j + 1
                         matched = True
                         break
                 if matched:
@@ -66,15 +76,15 @@ class EmotionTypeLabeling:
             if matched:
                 continue
 
-            if text[i:i + 7] == "http://":
-                j = i + 7
+            if text[i:i + sun1] == "http://":
+                j = i + sun1
                 while j < len(text) and text[j] not in " \n\t，。！？；":
                     j += 1
                 protected.update(range(i, j))
                 i = j
                 continue
-            if text[i:i + 8] == "https://":
-                j = i + 8
+            if text[i:i + sun2] == "https://":
+                j = i + sun2
                 while j < len(text) and text[j] not in " \n\t，。！？；":
                     j += 1
                 protected.update(range(i, j))
@@ -112,6 +122,8 @@ class EmotionTypeLabeling:
         return result
 
     def _find_l2_boundaries(self, text: str) -> list[tuple[int, str, float]]:
+        if any(w in text for w in self._rel_fronts | self._rel_backs):
+            return []
         boundaries = []
         n = len(text)
 
@@ -122,9 +134,9 @@ class EmotionTypeLabeling:
             prev = text[:i]
             if not self._has_predicate(prev):
                 continue
-            if prev and prev[-1] in FORBIDDEN_TAIL:
+            if prev[-1] in self.grammar.forbidden:
                 continue
-            if any(prev.endswith(v) for v in TRANSITIVE_VERBS):
+            if any(prev.endswith(v) for v in self.grammar.transitive):
                 continue
 
             boundaries.append((i, "subject_start", 0.75))
@@ -134,7 +146,7 @@ class EmotionTypeLabeling:
             if end >= n:
                 continue
 
-            if text[end] in CONTINUATIONS:
+            if text[end] in self.grammar.continuations:
                 continue
 
             prev = text[:end]
@@ -142,10 +154,8 @@ class EmotionTypeLabeling:
                 continue
 
             curr = text[end:]
-            if not (
-                    self._starts_with_subject(curr, 0)
-                    or self._starts_with_adverb(curr)
-            ):
+            if not (self._starts_with_subject(curr, 0)
+                    or self._starts_with_adverb(curr)):
                 continue
 
             adjust = self.grammar.particles.get(w, 1.0)
@@ -168,10 +178,10 @@ class EmotionTypeLabeling:
         return any(text.startswith(s, i) for s in self.grammar.pronouns)
 
     def _starts_with_adverb(self, seg: str) -> bool:
-        return any(seg.startswith(w) for w in ADVERB_STARTS)
+        return any(seg.startswith(w) for w in self.grammar.adverbs)
 
     def _has_predicate(self, seg: str) -> bool:
-        return any(v in seg for v in PREDICATE_VERBS)
+        return any(v in seg for v in self.grammar.predicates)
 
     def _iter_particles(self, text: str):
         for i in range(len(text)):
@@ -226,42 +236,206 @@ class EmotionTypeLabeling:
                 adjust=base.adjust,
             ))
         return nodes
+    def split_l3(self, clauses: list[ClauseNode])->list[ClauseNode]:
+        for node in clauses:
+            self._apply_partictle(node)
+        return clauses
+    def _apply_partictle(self, node: ClauseNode)->None:
+        text = node.text
+        if not text: return
+        stripped = text.rstrip(",，.。/？?|!！~;:；、…")
+        for w in sorted(self.grammar.particles, key = len, reverse = True):
+            if stripped.endswith(w):
+                node.particle = w
+                node.particle_subtype = self.grammar.particle_subtype.get(w, "")
+                adjust = self.grammar.particles[w]
+
+                particle_conf = round(
+                    min(PARTICLE_CONF_MAX,
+                        PARTICLE_CONF_BASE + PARTICLE_CONF_STEP * adjust),
+                    3,
+                )
+                node.confidence = round(max(node.confidence, particle_conf), 3)
+                break
+        if node.particle_subtype == "question":
+            node.is_question = True
+        if node.particle_subtype == "exclamation":
+            node.is_exclamation = True
+
+
+        if node.punct_subtype == "question":
+            node.is_question = True
+        if node.punct_subtype == "exclamation":
+            node.is_exclamation = True
+
+    def split_l4(self, clauses: list[ClauseNode]) -> list[ClauseNode]:
+        rules = load_relation_rules()
+        if not rules or not clauses:
+            return clauses
+
+        step1 = []
+        for c in clauses:
+            inside = self._find_inside_pair(c.text, rules)
+            if inside:
+                rule, b_pos = inside
+                step1.append(self._make_inside_compound(c, rule, b_pos))
+            else:
+                for rule in rules:
+                    hit = False
+                    for w in rule.standalone:
+                        if w in c.text:
+                            c.relation = rule.name
+                            hit = True
+                            break
+                    if hit:
+                        break
+                step1.append(c)
+
+        marks = [self._scan_relations(c.text, rules) for c in step1]
+
+        result = []
+        i = 0
+        while i < len(step1):
+            c = step1[i]
+
+            if c.children:  # 已配对，跳过
+                result.append(c)
+                i += 1
+                continue
+
+            m = marks[i]
+            if m["front"]:
+                rule, _ = m["front"][0]
+                found = -1
+                for j in range(i + 1, min(i + 4, len(step1))):
+                    if any(r2.name == rule.name for r2, _ in marks[j]["back"]):
+                        found = j
+                        break
+
+                if found != -1:
+                    for k in range(i + 1, found):
+                        result.append(step1[k])
+                    result.append(self._make_cross_compound(
+                        step1[i], step1[found], rule))
+                    i = found + 1
+                    continue
+
+            result.append(c)
+            i += 1
+
+        return result
+
+    def _make_cross_compound(
+            self,
+            front_c: ClauseNode,
+            back_c: ClauseNode,
+            rule,
+    ) -> ClauseNode:
+        """跨子句配对：front 和 back 是两条不同子句。"""
+        parent = ClauseNode(
+            text=front_c.text + back_c.text,
+            start=front_c.start,
+            end=back_c.end,
+            level=4,
+            split_reason="relation",
+            relation=rule.name,
+            confidence=0.85,
+            children=[front_c, back_c],
+        )
+        front_c.parent = parent
+        back_c.parent = parent
+        front_c.relation = f"{rule.name}_front"
+        back_c.relation = f"{rule.name}_back"
+        return parent
+    def _scan_relations(self, text: str, rules)->dict:
+        m = {"front": [], "back": [], "standalone": []}
+        for rule in rules:
+            for pair in rule.pairs:
+                for w in pair.front:
+                    if w in text:
+                        m["front"].append((rule, w))
+                        break
+                for w in pair.back:
+                    if w in text:
+                        m["back"].append((rule, w))
+                        break
+            for w in rule.standalone:
+                if w in text:
+                    m["standalone"].append((rule, w))
+                    break
+        return m
+
+    def _find_inside_pair(self, text, rules):
+        """同一条子句里同时有 front + back。"""
+        for rule in rules:
+            for pair in rule.pairs:
+                f_pos = -1
+                for w in pair.front:
+                    idx = text.find(w)
+                    if idx != -1 and (f_pos == -1 or idx < f_pos):
+                        f_pos = idx
+                if f_pos == -1:
+                    continue
+
+                b_pos = -1
+                for w in pair.back:
+                    idx = text.find(w, f_pos + 1)
+                    if idx != -1 and (b_pos == -1 or idx < b_pos):
+                        b_pos = idx
+                if b_pos == -1:
+                    continue
+
+                return rule, b_pos
+        return None
+
+    def _make_inside_compound(self, c, rule, b_pos):
+        front = ClauseNode(
+            text=c.text[:b_pos].strip(),
+            start=c.start, end=c.start + b_pos,
+            level=4, split_reason="rel_front",
+            relation=f"{rule.name}_front",
+            confidence=0.85,
+        )
+        back = ClauseNode(
+            text=c.text[b_pos:].strip(),
+            start=c.start + b_pos, end=c.end,
+            level=4, split_reason="rel_back",
+            relation=f"{rule.name}_back",
+            confidence=0.85,
+        )
+        parent = ClauseNode(
+            text = c.text,
+            start = c.start, end=c.end,
+            level = 4, split_reason="relation",
+            relation = rule.name,
+            confidence = 0.85,
+            children = [front, back],
+        )
+        front.parent = parent
+        back.parent = parent
+        return parent
 if __name__ == "__main__":
     labeler = EmotionTypeLabeling()
 
     cases = [
-        # ── L1 标点 ──
-        "今天很好！",
-        "今天很好，明天更好。",
-        "他说：“今天很好。”然后走了。",
-        "价格是 3.14 元。",
-        "网址是 http://a.com。真棒！",
-        "今天很好",
-        # ── L2 主谓宾 + 结束语 ──
-        "我很累你呢",
-        "我喜欢你你喜欢我吗",
-        "我很开心你呢",
-        "我今天很累",
-        "我爱你",
-        "我不觉得他开心",
-        "你去吗我去",
+        "因为今天很累所以我不想去",
+        "虽然很累但是我很开心",
+        "可是东西好啊，买得多的话就更好了",
+        "因为没有袋子给的，只有纸箱子！",
+        "很适合有车一族来采购，因为没有袋子给的，只有纸箱子！感觉有点像仓库，可是东西好啊，买得多的话就更好了",
     ]
 
     for text in cases:
-        print(f"\n{'='*50}")
-        print(f"IN : {text!r}")
+        print(f"\n{'='*60}\nIN: {text!r}")
         l1 = labeler.split_l1(text)
-        print(f"  L1 输出 ({len(l1)} 条):")
-        for n in l1:
-            print(f"    L1 [{n.split_reason:6s}] {n.text!r} "
-                  f"punct={n.punct!r} conf={n.confidence}")
-
         l2 = labeler.split_l2(l1)
-        if l2 != l1:
-            print(f"  L2 输出 ({len(l2)} 条):")
-            for n in l2:
-                print(f"    L{n.level} [{n.split_reason:13s}] {n.text!r} "
-                      f"conf={n.confidence}")
-        else:
-            print(f"  L2 未切分")
+        l3 = labeler.split_l3(l2)
+        l4 = labeler.split_l4(l3)
 
+        for n in l4:
+            if n.children:
+                print(f"  L4 [{n.relation}] {n.text!r}")
+                for c in n.children:
+                    print(f"      ├─ [{c.relation}] {c.text!r}")
+            else:
+                print(f"  L{n.level} [{n.relation or '-'}] {n.text!r}")

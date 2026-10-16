@@ -11,13 +11,20 @@ class GrammarRule:
 
 @dataclass(frozen=True)
 class GrammarLexicon:
-    pronouns:         frozenset[str] = frozenset()
-    prepositions:     frozenset[str] = frozenset()
-    particles:        dict[str, float] = field(default_factory = dict)
-    punctuations:     dict[str, float] = field(default_factory = dict)
-    punct_type:       dict[str, str] = field(default_factory = dict)
-    punct_subtype:    dict[str, str] = field(default_factory = dict)
-    particle_subtype: dict[str, str] = field(default_factory = dict)
+    pronouns: frozenset[str] = frozenset()
+    prepositions: frozenset[str] = frozenset()
+    particles: dict[str, float] = field(default_factory=dict)
+    punctuations: dict[str, float] = field(default_factory=dict)
+    punct_type: dict[str, str] = field(default_factory=dict)
+    punct_subtype: dict[str, str] = field(default_factory=dict)
+    particle_subtype: dict[str, str] = field(default_factory=dict)
+
+    predicates: frozenset[str] = frozenset()
+    objects: frozenset[str] = frozenset()
+    transitive: frozenset[str] = frozenset()
+    adverbs: frozenset[str] = frozenset()
+    continuations: frozenset[str] = frozenset()
+    forbidden: frozenset[str] = frozenset()
 
 
 @dataclass
@@ -88,6 +95,8 @@ class ClauseNode:
     punct_type: str | None = None
     punct_subtype: str | None = None
     adjust: float = 1.0
+    is_question: bool = False
+    is_exclamation: bool = False
 
     subject: str = ""
     particle: str = ""
@@ -96,6 +105,7 @@ class ClauseNode:
     relation: str | None = None
 
     parent: "ClauseNode | None" = field(default=None, repr=False, compare=False)
+    particle_subtype: str = ""
     children: list["ClauseNode"] = field(default_factory=list)
 
     confidence: float = 0.0

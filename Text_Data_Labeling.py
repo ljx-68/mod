@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from Types import ContextPattern, EmotionScore, Token
 from Document_Management import (
     load_emotion_data,
@@ -7,6 +6,7 @@ from Document_Management import (
     load_modifier_lexicon,
     load_relation_rules,
 )
+
 
 
 class EmotionTypeLabeling:
