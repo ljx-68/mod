@@ -29,13 +29,6 @@
   },
   {
     "type": "punctuation",
-    "subtype": "tilde",
-    "desc": "波浪号，俏皮，轻快",
-    "adjust": 1.05,
-    "words": ["～", "~"]
-  },
-  {
-    "type": "punctuation",
     "subtype": "dash",
     "desc": "破折号，强调，转折",
     "adjust": 1.10,
@@ -48,13 +41,13 @@
     "adjust": 1.00,
     "words": ["，", ","]
   },
-  {
+    {
     "type": "punctuation",
     "subtype": "enumeration",
     "desc": "顿号，列举，中性",
     "adjust": 1.00,
     "words": ["、"]
-  },
+    },
   {
     "type": "punctuation",
     "subtype": "semicolon",
@@ -82,5 +75,12 @@
     "desc": "括号，补充，中性",
     "adjust": 1.00,
     "words": ["（", "）", "(", ")"]
-  }
+  },
+  {
+  "type": "separator",
+  "subtype": "space",
+  "desc": "空格，分隔符",
+  "adjust": 0.63,
+  "words": [" ", "　", "\t", "\u00a0"]
+}
 ]

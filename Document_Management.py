@@ -1,26 +1,12 @@
 import json
 from Types import *
+from Roughlyfilter_data import *
 from pathlib import Path
 from Types import (
     GrammarLexicon, InferenceRecord, ClauseRecord,EmotionScore,
     NegationLexicon, ModifierLexicon,
     ContextPattern, RelationPair, RelationRule,
 )
-# 文件顶部加
-SUBTYPE_TO_TYPE = {
-    "exclamation": "strong",
-    "question":    "strong",
-    "period":      "strong",
-    "dash":        "medium",
-    "semicolon":   "medium",
-    "colon":       "medium",
-    "comma":       "weak",
-    "enumeration": "weak",
-    "tilde":       "weak",
-    "ellipsis":    "weak",
-    "quotation":   "protect",
-    "bracket":     "protect",
-}
 from datetime import datetime
 class DataLoadError(RuntimeError):
     pass

@@ -1,15 +1,17 @@
 
 SUBTYPE_TO_TYPE = {
-    "exclamation": "strong",
     "question":    "strong",
     "period":      "strong",
-    "dash":        "medium",
-    "semicolon":   "medium",
-    "colon":       "medium",
-    "comma":       "weak",
-    "enumeration": "weak",
-    "tilde":       "weak",
-    "ellipsis":    "weak",
+    "ellipsis":    "strong",
+    "exclamation": "strong",
+    "space": "weak",
+
+    "dash":        "protect",
+    "semicolon":   "protect",
+    "colon":       "protect",
+    "comma":       "protect",
+    "enumeration": "protect",
+    "tilde":       "protect",
     "quotation":   "protect",
     "bracket":     "protect",
 }
@@ -25,7 +27,6 @@ BASE_CONF = {
 }
 
 OPEN_QUOTES = ("“", "”", "‘", "’", '"', "'")
-
 PROTECT_PAIRS = (
     ("“", "”"), ("‘", "’"),
     ("（", "）"), ("(", ")"),
