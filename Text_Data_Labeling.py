@@ -185,4 +185,8 @@ class EmotionTypeLabeling:
             print(f"⚠️ 重复: {word} 已在 {existing}，又出现在 {emo}")
         existing.append(emo)
 if __name__ == "__main__":
+    labeler = EmotionTypeLabeling()
 
+    scores = labeler.Text_matching("我很开心")
+    for emo, s in scores.items():
+        print(f"{emo}: raw={s.raw}, final={s.final}, sources={s.sources}")

@@ -1,5 +1,6 @@
 import json
 from Types import *
+import csv
 from Roughlyfilter_data import *
 from pathlib import Path
 from Types import (
@@ -369,5 +370,43 @@ def build_grammar_lexicon(root=".") -> GrammarLexicon:
         continuations    = continuations,
         forbidden        = forbidden,
     )
+def load_corpus_csv(
+    path: str | Path = "ratings.csv",
+    root: str | Path = ".",
+    text_col: int = 4,
+    score_cols: tuple[int, ...] = (0, 1, 2, 3),
+    skip_empty: bool = True,
+) -> list[dict]:
+    file = Path(root) / path
+    if not file.exists():
+        return []
+
+    rows = []
+    with file.open("r", encoding="utf-8-sig", newline="") as f:
+        reader = csv.reader(f)
+        for row in reader:
+            if len(row) <= text_col:
+                continue
+
+            text = row[text_col].strip()
+            if skip_empty and not text:
+                continue
+
+            scores = []
+            for c in score_cols:
+                if c < len(row) and row[c].strip():
+                    try:
+                        scores.append(float(row[c]))
+                    except ValueError:
+                        scores.append(None)
+                else:
+                    scores.append(None)
+
+            rows.append({
+                "text": text,
+                "scores": scores,
+                "timestamp": row[text_col - 1] if text_col > 0 else "",
+            })
+    return rows
 if __name__ == "__main__":
     build_grammar_lexicon(".")

@@ -1,4 +1,4 @@
-# grammar_rules.py
+
 from Roughlyfilter_data import (
     BASE_CONF, OPEN_QUOTES, PROTECT_PAIRS, URL_STOP,
     PARTICLE_CONF_BASE, PARTICLE_CONF_STEP, PARTICLE_CONF_MAX,
@@ -7,7 +7,7 @@ from Types import ClauseNode, Edge_processing
 from Document_Management import load_relation_rules, build_grammar_lexicon
 
 
-class EmotionTypeLabeling:
+class ClauseSplitter:
     def __init__(self, root="."):
         self.root = root
         self.grammar = build_grammar_lexicon(root=root)
@@ -451,51 +451,74 @@ class EmotionTypeLabeling:
         back.parent = parent
         return parent
 
-TEXTS = [
-    "经常去的，不过我自己的卡很久不用，被冻了，只能用爸爸的。吉利莲的巧克力以前选择多些，最近一次去只有一种选择了。食品零食的选择还不够。买不全。酸奶的日期都比较新鲜，逢年过节，时令食品的选择比较丰富。冷冻产品丰富，看看都不错。建议自己带好购物袋。",
-    "喜欢在这里购物的感觉~~不在市中心,又是凭会员卡购物,因此不会有像家乐福\沃尔马那种人多很挤的场面,在这购物很安心,环境,商品的质量,价格都很有保证~~我觉得长沙最便宜的手机就是这的了````而且绝对保证是行货~~",
-    "很适合有车一族来采购，因为没有袋子给的，只有纸箱子！感觉有点像仓库，可是东西好啊，买得多的话就更好了",
-    "里面有一些进口食品还是不错的，但个人感觉商品种类比较少，而且管理不是很灵活，退货比较麻烦。价格方面是比较适中的。\n现在没有会员也可以进了，竞争越来越激烈了嘛。",
-    "虽然是有一些不方便,但购物环境比较舒服,人少,房高,感觉很通透,不像别的商场人多,楼层低,人多的时候很闷,这里不会有这些问题,不过在这要买的多才爽,看着一车子东西,真的很爽.",
-    "非常喜欢这个德国超市，他家各类东东都品牌齐全，不像沃尔玛、家乐福之类只有便宜货。经常能找到一些讨人喜欢的东东，比如梅子醋、XO酱、超有料的炖汤佐料，当然还有偶最爱的各式冷冻海鲜和Icecream，大爱。PS。停车也超方便，偶去四方坪常蹭他家免费停车位，非常谢谢啦，呵呵。",
-    "感觉像仓储式购物，这才是超市：1 超级大；2 停车超级方便；3品种超级多；4 东西超级正牌超级便宜；5 运营超级规范",
-    "从这家超市刚在湖南开的时候就开始消费，眼看着这里周边由荒凉变得热闹。人生真是好短。\n奇怪的是这里既然说是全世界有很多连锁店的超市，我在美国纽约州读书的同学居然说一直没有见过美国有这个超市，而且METRO是地铁的意思，晕。\n商品齐全，有不少杭州特产，楼外楼的东坡肉之类都有卖。对了，还有哈根达斯，在冰柜里，一样很贵很贵。\n买单的时候要刷会员卡的。\n他们家不对家庭和个人开放，会员是要凭营业执照去登记的。因此确实这样会把很多人拒之门外。\n有不少海鲜，价钱好贵。推荐水果、进口食品、现做面包等，质素都很不错，品种也齐全",
-    "喜欢在麦德龙购物已经5，6年了。自从麦德龙开了没多久，几个败家妈妈就发现了它，平均一礼拜来一次，还是开车从湘潭来。（汗一个先~老说便宜，其实来回的油钱和过桥过路费都不知道多少了。。。）",
-    "麦德隆多是大包装的东西。适合三代同堂的家庭采购。\n这里有卡才能进入，结帐时，同样要出示会员卡。\n其实离我家还蛮远的。但有时也会开车到这里来采购。\n不过，有次在这里买了酱牛肉，密封包装的。回到家里，打开包装，吓死了，牛肉都绿了。再仔细看了看保质日期，没错呀，是在保质期内的。只好又开车去麦德隆退货。损失了路费。就连麦德隆的售后服务人员，看了包装袋里的酱牛肉，都不禁皱起了眉头",
-    "全部都是货架 有点像个仓库  东西都要成打的买··我哥哥喜欢去那里买东西··觉得还不错吧 有很多其他超市买不到的物品··总的来说很不错·",
-]
+    def merge_short(
+            self,
+            clauses: list[ClauseNode],
+            min_len: int = 3,
+    ) -> list[ClauseNode]:
+        if not clauses:
+            return []
 
+        result = [clauses[0]]
+        for c in clauses[1:]:
+            if len(c.text) < min_len and result:
+                prev = result[-1]
+                prev.text += c.text
+                prev.end = c.end
+                if c.children:
+                    prev.children.extend(c.children)
+            else:
+                result.append(c)
+        return result
 
-def check_one(labeler, text, idx):
-    print(f"\n{'='*70}")
-    print(f"#{idx}  len={len(text)}  首40字={text[:40]!r}")
+    def build_tree(self, clauses: list[ClauseNode]) -> ClauseNode:
+        if not clauses:
+            return ClauseNode(text="", start=0, end=0, level=0)
 
-    l1 = labeler.split_l1(text)
-    l2 = labeler.split_l2(l1)
-    l3 = labeler.split_l3(l2)
-    l4 = labeler.split_l4(l3)
+        roots = [c for c in clauses if c.parent is None]
 
-    print(f"  L1={len(l1)}  L2={len(l2)}  L3={len(l3)}  L4={len(l4)}")
-
-    for n in l4:
-        if n.children:
-            print(f"  L4 [{n.relation}] {n.text[:50]!r}")
-            for c in n.children:
-                print(f"      ├─ [{c.relation}] {c.text[:40]!r}")
+        if len(roots) == 1:
+            root = roots[0]
         else:
-            tag = n.relation or "-"
-            long = " ⚠长" if len(n.text) > 50 else ""
-            print(f"  L{n.level} [{tag:10s}] {n.text[:50]!r}{long}")
+            root = ClauseNode(
+                text = "".join(c.text for c in roots),
+                start = roots[0].start,
+                end = roots[-1].end,
+                level = 0,
+                split_reason = "root",
+                confidence = 1.0,
+                children = roots,
+            )
+            for c in roots:
+                c.parent = root
 
+        self._fill_clause_list(root)
+        return root
+    def split(self, text: str) -> ClauseNode:
+        l1 = self.split_l1(text)
+        l2 = self.split_l2(l1)
+        l3 = self.split_l3(l2)
+        l4 = self.split_l4(l3)
+        merged = self.merge_short(l4)
+        tree = self.build_tree(merged)
 
-def main():
-    labeler = EmotionTypeLabeling()
-    for i, text in enumerate(TEXTS, 1):
-        check_one(labeler, text, i)
+        return tree
 
-    print(f"\n{'='*70}")
-    print("体检结论（见下方人工判断）")
+    def _fill_clause_list(self, node: ClauseNode) -> list[ClauseNode]:
+        if node.is_leaf():
+            node.ClauseList = [node]
+            return [node]
 
+        result = []
+        for child in node.children:
+            result.extend(self._fill_clause_list(child))
 
+        node.ClauseList = result
+        return result
 if __name__ == "__main__":
-    main()
+    splitter = ClauseSplitter()
+    tree = splitter.split("今天很好！明天更好！")
+    print(tree)
+    # 直接拿所有子句
+    for c in tree.ClauseList:
+        print(c)

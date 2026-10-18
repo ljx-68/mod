@@ -264,3 +264,11 @@ class RelationRule:
     weight: tuple[float, float] = (1.0, 1.0)
     standalone: tuple[str, ...] = ()
     pairs: tuple[RelationPair, ...] = ()
+
+@dataclass(frozen=True)
+class Token:
+    word: str
+    start: int
+    end: int
+    kind: str
+    value: Any
