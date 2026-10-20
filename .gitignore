@@ -13,7 +13,7 @@ env/
 .idea/
 
 # 数据
-data/
+78/data/
 *.jsonl
 *.csv
 ratings.csv

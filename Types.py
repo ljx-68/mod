@@ -1,4 +1,5 @@
 from typing import Any
+import copy
 from dataclasses import dataclass, field, asdict, fields
 @dataclass(frozen=True)
 class GrammarRule:
@@ -90,6 +91,7 @@ class ClauseNode:
 
     level: int = 1
     split_reason: str = ""
+    vad: list[float] = field(default_factory=list)
 
     punct: str | None = None
     punct_type: str | None = None
@@ -100,28 +102,52 @@ class ClauseNode:
 
     subject: str = ""
     particle: str = ""
+    particle_subtype: str = ""
     is_sentence: bool = False
 
     relation: str | None = None
 
     parent: "ClauseNode | None" = field(default=None, repr=False, compare=False)
-    particle_subtype: str = ""
     children: list["ClauseNode"] = field(default_factory=list)
 
     confidence: float = 0.0
-    emotions: list[EmotionScore] = field(default_factory=list)
+    emotions: list["EmotionScore"] = field(default_factory=list)
     grammar: "GrammarResult | None" = field(default=None, repr=False, compare=False)
 
     def is_leaf(self) -> bool:
         return not self.children
 
-    def add_emotion(self, score: EmotionScore) -> None:
+    def add_emotion(self, score: "EmotionScore") -> None:
         self.emotions.append(score)
 
-    def dominant(self) -> EmotionScore | None:
+    def dominant(self) -> "EmotionScore | None":
         if not self.emotions:
             return None
         return max(self.emotions, key=lambda e: abs(e.raw * e.intensity))
+
+    def filter_tree(self, only_emotion: bool = True) -> "ClauseNode | None":
+        children = []
+        for c in self.children:
+            f = c.filter_tree(only_emotion)
+            if f is not None:
+                children.append(f)
+
+        if only_emotion and not children and not self.emotions:
+            return None
+
+        new = copy.copy(self)
+        new.children = children
+        new.parent = None
+        for c in children:
+            c.parent = new
+        return new
+
+    def iter_leaves(self):
+        if self.is_leaf():
+            yield self
+            return
+        for c in self.children:
+            yield from c.iter_leaves()
 
     def to_dict(self) -> dict:
         return {
@@ -130,18 +156,22 @@ class ClauseNode:
             "end": self.end,
             "level": self.level,
             "split_reason": self.split_reason,
+            "vad": self.vad,
             "punct": self.punct,
+            "has_emotion": bool(self.emotions),
             "punct_type": self.punct_type,
             "punct_subtype": self.punct_subtype,
             "adjust": self.adjust,
             "subject": self.subject,
             "particle": self.particle,
+            "particle_subtype": self.particle_subtype,
             "is_sentence": self.is_sentence,
             "relation": self.relation,
             "confidence": self.confidence,
             "emotions": [e.to_dict() for e in self.emotions],
             "children": [c.to_dict() for c in self.children],
         }
+
 
 
 @dataclass

@@ -1,5 +1,4 @@
 import json
-from Types import *
 import csv
 from Roughlyfilter_data import *
 from pathlib import Path
@@ -11,7 +10,7 @@ from Types import (
 from datetime import datetime
 class DataLoadError(RuntimeError):
     pass
-def load_emotion_data(address="feelings", root=".") -> dict[str, list[dict]]:
+def load_emotion_data(address = "feelings", root=".") -> dict[str, list[dict]]:
     path = Path(root) / address
     if not path.exists():
         return {}
@@ -373,9 +372,12 @@ def build_grammar_lexicon(root=".") -> GrammarLexicon:
 def load_corpus_csv(
     path: str | Path = "ratings.csv",
     root: str | Path = ".",
-    text_col: int = 4,
-    score_cols: tuple[int, ...] = (0, 1, 2, 3),
+    text_col: int = 7,
+    timestamp_col: int = 6,
+    score_cols: tuple[int, ...] = (3, 4, 5),
     skip_empty: bool = True,
+    has_header: bool = True,
+    max_rows: int | None = None,
 ) -> list[dict]:
     file = Path(root) / path
     if not file.exists():
@@ -384,7 +386,13 @@ def load_corpus_csv(
     rows = []
     with file.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.reader(f)
+        if has_header:
+            next(reader, None)
+
         for row in reader:
+            if max_rows is not None and len(rows) >= max_rows:
+                break
+
             if len(row) <= text_col:
                 continue
 
@@ -405,7 +413,9 @@ def load_corpus_csv(
             rows.append({
                 "text": text,
                 "scores": scores,
-                "timestamp": row[text_col - 1] if text_col > 0 else "",
+                "timestamp": row[timestamp_col] if timestamp_col < len(row) else "",
+                "user_id": row[0] if len(row) > 0 else "",
+                "rest_id": row[1] if len(row) > 1 else "",
             })
     return rows
 if __name__ == "__main__":

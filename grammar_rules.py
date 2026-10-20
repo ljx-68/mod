@@ -519,6 +519,5 @@ if __name__ == "__main__":
     splitter = ClauseSplitter()
     tree = splitter.split("今天很好！明天更好！")
     print(tree)
-    # 直接拿所有子句
     for c in tree.ClauseList:
         print(c)
