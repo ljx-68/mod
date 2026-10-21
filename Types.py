@@ -149,6 +149,11 @@ class ClauseNode:
         for c in self.children:
             yield from c.iter_leaves()
 
+    def has_emotion(self) -> bool:
+        if self.emotions:
+            return True
+        return any(c.has_emotion() for c in self.children)
+
     def to_dict(self) -> dict:
         return {
             "text": self.text,
@@ -302,3 +307,20 @@ class Token:
     end: int
     kind: str
     value: Any
+
+@dataclass(frozen = True)
+class analyze_tpye:
+    test: str
+    def Result(self, tree:ClauseNode)->dict:
+        return {
+        "text": self.test,
+        "vad": tree.vad,
+        "has_emotion": tree.has_emotion(),
+        "tree": tree.to_dict(),
+        "clauses": [
+            {
+                "text": i.text,
+                "vad": i.vad,
+                "emotions": [e.emotion for e in i.emotions],
+                "has_emotion": bool(i.emotions),
+            }for i in tree.iter_leaves()],}

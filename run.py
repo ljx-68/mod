@@ -59,4 +59,4 @@ class Node:
         print(self.unlabeled_store.stats())
 
 if __name__ == "__main__":
-    Node().Data_Loading(max_rows = 100)
+    Node().Data_Loading(max_rows = 1000)
