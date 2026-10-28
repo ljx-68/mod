@@ -1,0 +1,26 @@
+[
+  {
+    "type": "particle",
+    "subtype": "exclamation",
+    "adjust": 1.1,
+    "words": ["啊", "呀", "哦", "哈", "哟", "哇"]
+  },
+  {
+    "type": "particle",
+    "subtype": "speculation",
+    "adjust": 0.7,
+    "words": ["吧", "呗"]
+  },
+  {
+    "type": "particle",
+    "subtype": "question",
+    "adjust": 0.9,
+    "words": ["呢", "吗"]
+  },
+  {
+    "type": "particle",
+    "subtype": "completion",
+    "adjust": 1.0,
+    "words": ["了", "啦"]
+  }
+]

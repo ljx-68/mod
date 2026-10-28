@@ -1,0 +1,18 @@
+[{
+  "name": "依赖",
+  "emotion": "Trust",
+  "require_all_groups": [
+    ["相信", "信任", "依赖", "靠得住"],
+    ["他", "她", "你", "我"]
+  ],
+  "weight": 1.1
+},
+{
+  "name": "托付",
+  "emotion": "Trust",
+  "require_all_groups": [
+    ["交给", "托付", "拜托", "放心"],
+    ["你", "他", "她", "我"]
+  ],
+  "weight": 1.2
+}]

@@ -1,0 +1,31 @@
+[
+  {
+  "name": "盼望已久",
+  "emotion": "Anticipation",
+  "require_all_groups": [
+    ["等", "盼", "期待", "盼望"],
+    ["好久", "几年", "久", "终于", "马上",
+     "十年", "多年", "数年", "许久", "良久",
+     "好几年", "大半年"]
+  ],
+  "weight": 1.2
+},
+{
+  "name": "即将到来",
+  "emotion": "Anticipation",
+  "require_all_groups": [
+    ["马上", "快要", "即将", "就要"],
+    ["来", "到", "开始", "见面", "出发"]
+  ],
+  "weight": 1.1
+},
+{
+  "name": "憧憬未来",
+  "emotion": "Anticipation",
+  "require_all_groups": [
+    ["希望", "但愿", "如果能"],
+    ["实现", "成功", "变好", "到来"]
+  ],
+  "weight": 1.0
+}
+]

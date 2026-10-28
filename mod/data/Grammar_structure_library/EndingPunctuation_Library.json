@@ -1,0 +1,86 @@
+[
+  {
+    "type": "punctuation",
+    "subtype": "exclamation",
+    "desc": "感叹号，强烈情感",
+    "adjust": 1.20,
+    "words": ["！", "!"]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "question",
+    "desc": "问号，疑问",
+    "adjust": 1.10,
+    "words": ["？", "?"]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "period",
+    "desc": "句号，陈述，中性",
+    "adjust": 1.00,
+    "words": ["。", "."]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "ellipsis",
+    "desc": "省略号，犹豫，意犹未尽",
+    "adjust": 0.80,
+    "words": ["…", "..."]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "dash",
+    "desc": "破折号，强调，转折",
+    "adjust": 1.10,
+    "words": ["—", "——"]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "comma",
+    "desc": "逗号，停顿，中性",
+    "adjust": 1.00,
+    "words": ["，", ","]
+  },
+    {
+    "type": "punctuation",
+    "subtype": "enumeration",
+    "desc": "顿号，列举，中性",
+    "adjust": 1.00,
+    "words": ["、"]
+    },
+  {
+    "type": "punctuation",
+    "subtype": "semicolon",
+    "desc": "分号，分句，中性",
+    "adjust": 1.00,
+    "words": ["；", ";"]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "colon",
+    "desc": "冒号，解释，中性",
+    "adjust": 1.00,
+    "words": ["：", ":"]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "quotation",
+    "desc": "引号，引用或反讽",
+    "adjust": 1.00,
+    "words": ["“", "”", "\"", "‘", "’", "'"]
+  },
+  {
+    "type": "punctuation",
+    "subtype": "bracket",
+    "desc": "括号，补充，中性",
+    "adjust": 1.00,
+    "words": ["（", "）", "(", ")"]
+  },
+  {
+  "type": "separator",
+  "subtype": "space",
+  "desc": "空格，分隔符",
+  "adjust": 0.63,
+  "words": [" ", "　", "\t", "\u00a0"]
+}
+]

@@ -1,0 +1,38 @@
+[
+  {
+  "name": "截止压力",
+  "emotion": "Anxiety",
+  "require_all_groups": [
+    ["截止", "deadline", "明天", "后天", "下周"],
+    ["交", "考", "面试", "演讲", "报告", "完成"]
+  ],
+  "weight": 1.3
+},
+{
+  "name": "未知结果",
+  "emotion": "Anxiety",
+  "require_all_groups": [
+    ["不知道", "没把握", "心里没底", "万一"],
+    ["结果", "会怎样", "能不能", "行不行"]
+  ],
+  "weight": 1.2
+},
+{
+  "name": "等待结果",
+  "emotion": "Anxiety",
+  "require_all_groups": [
+    ["等", "等待", "等结果", "等通知"],
+    ["结果", "消息", "通知", "回复"]
+  ],
+  "weight": 1.1
+},
+{
+  "name": "过度担心",
+  "emotion": "Anxiety",
+  "require_all_groups": [
+    ["担心", "害怕", "忧虑", "放心不下"],
+    ["会", "可能", "万一", "要是"]
+  ],
+  "weight": 1.3
+}
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "type": "preposition",
+    "subtype": "target",
+    "desc": "引出对象",
+    "words": ["对", "对于", "关于", "至于"]
+  },
+  {
+    "type": "preposition",
+    "subtype": "disposal",
+    "desc": "把字句",
+    "words": ["把", "将"]
+  },
+  {
+    "type": "preposition",
+    "subtype": "dative",
+    "desc": "引出受益者",
+    "words": ["给", "为", "替", "帮"]
+  },
+  {
+    "type": "preposition",
+    "subtype": "causative",
+    "desc": "让字句",
+    "words": ["让", "叫", "使", "令"]
+  },
+  {
+    "type": "preposition",
+    "subtype": "comitative",
+    "desc": "伴随",
+    "words": ["跟", "和", "与", "同"]
+  },
+  {
+    "type": "preposition",
+    "subtype": "passive",
+    "desc": "被动",
+    "words": ["被", "让", "叫", "给"]
+  }
+]

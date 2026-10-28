@@ -1,0 +1,192 @@
+from pathlib import Path
+from .Types import ContextPattern, EmotionScore, Token
+from .Document_Management import (
+    load_emotion_data,
+    load_negation_lexicon,
+    load_modifier_lexicon,
+    load_relation_rules,
+)
+
+
+
+class EmotionTypeLabeling:
+    def __init__(self, root: Path | str = "."):
+        self.root = Path(root)
+
+        self.context_patterns, self.word_index = self._build_word_index()
+        self.negation = load_negation_lexicon()
+        self.modifier = load_modifier_lexicon()
+        self.relation_rules = load_relation_rules()
+
+        self.lexicon = self._build_lexicon()
+        self.words_sorted = sorted(self.lexicon, key = len, reverse = True)
+
+    def _build_word_index(self, address: str = "feelings") -> tuple[list[ContextPattern], dict[str, list[str]]]:
+        data: dict = load_emotion_data(address = address)
+        if not data:
+            return [], {}
+        patterns: list[ContextPattern] = []
+        word_index: dict[str, list[str]] = {}
+        for emo, items in data.items():
+            for item in items:
+                if not isinstance(item, dict):
+                    continue
+                if "data" in item:
+                    emotion = item.get("Type", emo)
+                    for word in item.get("data", []):
+                        self._add_word(word_index, word, emotion)
+                elif "name" in item and "emotion" in item:
+                    self._add_pattern(item, patterns)
+        return patterns, word_index
+
+    def _add_pattern(self, item: dict, patterns: list[ContextPattern]) -> None:
+        try:
+            patterns.append(ContextPattern(
+                name=item["name"],
+                emotion=item["emotion"],
+                require_all_groups=tuple(
+                    tuple(g) for g in item["require_all_groups"]
+                ),
+                weight=float(item["weight"]),
+            ))
+        except (KeyError, TypeError, ValueError):
+            pass
+    def _build_lexicon(self) -> dict[str, list[tuple[str, object]]]:
+        lex: dict[str, list[tuple[str, object]]] = {}
+
+        def add(word: str, kind: str, value):
+            lex.setdefault(word, []).append((kind, value))
+
+        for word, emotions in self.word_index.items():
+            add(word, "emotion", emotions)
+
+        for word in self.negation.words:
+            add(word, "negation", None)
+
+        for word, coef in self.modifier.modifiers.items():
+            add(word, "modifier", coef)
+
+        for rule in self.relation_rules:
+            for word in rule.standalone:
+                add(word, "relation", rule.name)
+            for pair in rule.pairs:
+                for word in pair.front:
+                    add(word, "relation", rule.name)
+                for word in pair.back:
+                    add(word, "relation", rule.name)
+
+        return lex
+
+    def Text_matching(self, text: str) -> dict[str, EmotionScore]:
+        tokens = self._tokenize(text)
+        relation = self._extract_relation(tokens)
+
+        scores: dict[str, EmotionScore] = {}
+        for token in tokens:
+            if token.kind == "emotion":
+                self._fill_score(scores, tokens, token, relation)
+
+        return scores
+    def _tokenize(self, text: str) -> list[Token]:
+        matched: set[int] = set()
+        tokens: list[Token] = []
+
+        i = 0
+        while i < len(text):
+            word = self._match_at(text, i, matched)
+            if word:
+                for kind, value in self.lexicon[word]:
+                    tokens.append(Token(word, i, i + len(word), kind, value))
+                matched |= set(range(i, i + len(word)))
+                i += len(word)
+            else:
+                i += 1
+        return tokens
+    def _match_at(self, text: str, position: int, matched: set[int]) -> str | None:
+        for word in self.words_sorted:
+            if text.startswith(word, position):
+                span = set(range(position, position + len(word)))
+                if not (span & matched):
+                    return word
+        return None
+
+    def _extract_relation(self, tokens: list[Token]) -> str:
+        rel_tokens = [t for t in tokens if t.kind == "relation"]
+        if not rel_tokens:
+            return ""
+
+        hit_names = {t.value for t in rel_tokens}
+
+        for rule in self.relation_rules:
+            if rule.name not in hit_names:
+                continue
+
+            for t in rel_tokens:
+                if t.value == rule.name and t.word in rule.standalone:
+                    return rule.name
+
+            for pair in rule.pairs:
+                front_hit = any(
+                    t.value == rule.name and t.word in pair.front
+                    for t in rel_tokens
+                )
+                back_hit = any(
+                    t.value == rule.name and t.word in pair.back
+                    for t in rel_tokens
+                )
+                if front_hit and back_hit:
+                    return rule.name
+
+        return ""
+    def _count_negation(self, tokens: list[Token], position: int, max_distance: int = 5) -> int:
+        return sum(
+            1 for t in tokens
+            if t.kind == "negation" and  0 <= position - t.end < max_distance
+        )
+    def _compute_intensity(self, tokens: list[Token], position: int, max_distance: float = 3.0) -> float:
+        best_value = 1.0
+        best_distance = max_distance + 1
+        for t in tokens:
+            if t.kind != "modifier":
+                continue
+            distance = position - t.end
+            if 0 <= distance < max_distance and distance < best_distance:
+                best_distance = distance
+                best_value = t.value
+        return min(best_value, 3.0)
+
+    def _fill_score(
+        self,
+        scores: dict[str, EmotionScore],
+        tokens: list[Token],
+        token: Token,
+        relation: str,
+    ) -> None:
+        neg_count = self._count_negation(tokens, token.start)
+        intensity = self._compute_intensity(tokens, token.start)
+
+        for emo in token.value:
+            if emo not in scores:
+                scores[emo] = EmotionScore(emotion = emo)
+            s = scores[emo]
+            s.raw += 1.0
+            s.neg_count += neg_count
+            s.intensity = max(s.intensity, intensity)
+            s.positions.append(token.start)
+            s.sources.append(f"词表:{token.word}")
+            if relation:
+                s.relation = relation
+
+    def _add_word(self, word_index: dict, word: str, emo: str) -> None:
+        existing = word_index.setdefault(word, [])
+        if emo in existing:
+            return
+        if existing:
+            print(f"⚠️ 重复: {word} 已在 {existing}，又出现在 {emo}")
+        existing.append(emo)
+if __name__ == "__main__":
+    labeler = EmotionTypeLabeling()
+
+    scores = labeler.Text_matching("我很开心")
+    for emo, s in scores.items():
+        print(f"{emo}: raw={s.raw}, final={s.final}, sources={s.sources}")

@@ -1,0 +1,55 @@
+[
+  {"type": "predicate", "subtype": "action",
+   "words": ["去","来","做","说","看","听","吃","喝","走","跑","买","卖","给","拿","放","开","关"]},
+
+  {"type": "predicate", "subtype": "copula",
+   "words": ["是","有","在"]},
+
+  {"type": "predicate", "subtype": "psych",
+   "words": ["想","要","觉得","认为","希望","喜欢","讨厌","感到","知道","明白","记得","忘记"]},
+
+  {"type": "predicate", "subtype": "emotion",
+   "words": ["累","开心","难过","生气","高兴","伤心","害怕","担心","焦虑","兴奋","失望"]},
+
+  {"type": "predicate", "subtype": "modal",
+   "words": ["会","能","可以","应该","必须","敢","肯"]},
+
+  {"type": "predicate", "subtype": "transitive",
+   "words": ["喜欢","讨厌","觉得","认为","希望","知道","明白","爱","恨","想","要","看","听","吃","喝","买","卖","给","拿","放","开","关","说","做","是","有"]},
+
+  {"type": "object", "subtype": "pronoun",
+   "words": ["我","你","他","她","它","我们","你们","他们"]},
+
+  {"type": "object", "subtype": "noun",
+   "words": ["饭","水","书","公司","学校","家","钱","车","房"]},
+
+  {"type": "adverb", "subtype": "frequency",
+   "words": ["又","再","也","还"]},
+
+  {"type": "adverb", "subtype": "manner",
+   "words": ["就","才","便"]},
+
+  {"type": "adverb", "subtype": "contrast",
+   "words": ["却","反而","甚至","竟然","果然"]},
+
+  {"type": "continuation", "subtype": "verb",
+   "words": ["就","才","便","又","也","还"]},
+
+  {"type": "forbidden", "subtype": "preposition",
+   "words": ["对","把","被","给","向","往","跟","和","与","同","为","替","帮","让","叫","使","令","从","在","由","因","于"]},
+
+  {"type": "forbidden", "subtype": "negation",
+   "words": ["不","没","别","无","非","未","莫"]},
+
+  {"type": "forbidden", "subtype": "degree",
+   "words": ["很","太","非常","特别","十分","极其","更","最","挺","蛮","真","好","超"]},
+
+  {"type": "forbidden", "subtype": "auxiliary",
+   "words": ["的","地","得"]},
+
+  {"type": "forbidden", "subtype": "conjunction",
+   "words": ["和","与","及","或","而","并"]},
+
+  {"type": "forbidden", "subtype": "measure",
+   "words": ["个","只","件","次","遍","下","些","点"]}
+]

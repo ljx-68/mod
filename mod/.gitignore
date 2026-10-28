@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# PyCharm
+.idea/
+.vscode/
+
+# 数据与输出（忽略你跑数据的临时目录和大文件）
+78/data/
+data/cache/
+data/results/
+*.jsonl
+ratings.csv
+*.csv
+
+# 系统文件
+.DS_Store
+
+# 注意：不要忽略 mod/ 和 data/ 下面的词表 JSON！
+# 如果不想传 78 文件夹，直接忽略 78/ 即可，不要写 mod/
