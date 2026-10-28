@@ -18,9 +18,10 @@ env/
 .gradio/
 
 # 数据与输出（忽略跑数据的临时目录和大文件）
+mod/ratings.csv
+mod/data/results/
 mod/data/cache/
-data/cache/
-data/results/
+__pycache__/
 *.jsonl
 ratings.csv
 *.csv
