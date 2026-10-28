@@ -1,0 +1,4 @@
+{"text": "我有点不喜欢你", "emotions": [{"emotion": "Love", "raw": 1.0, "intensity": 1.0, "neg_count": 1, "relation": "", "positions": [4], "sources": ["词表:喜欢"], "subjects": [], "final": -1.0}], "vad": [0.34, 0.51, 0.54]}
+{"text": "你好吗", "emotions": [], "vad": [0.5, 0.5, 0.5]}
+{"text": "你不太好吗", "emotions": [], "vad": [0.5, 0.5, 0.5]}
+{"text": "我喜欢你", "emotions": [{"emotion": "Love", "raw": 1.0, "intensity": 1.0, "neg_count": 0, "relation": "", "positions": [1], "sources": ["词表:喜欢"], "subjects": [], "final": 1.0}], "vad": [0.9, 0.55, 0.6]}
