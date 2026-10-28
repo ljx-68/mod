@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyc
+*.egg-info/
+.pytest_cache/
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Gradio 缓存
+.gradio/
+
+# 数据与输出（忽略跑数据的临时目录和大文件）
+mod/data/cache/
+data/cache/
+data/results/
+*.jsonl
+ratings.csv
+*.csv
+
+# 系统文件
+.DS_Store
